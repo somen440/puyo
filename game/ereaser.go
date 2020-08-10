@@ -1,92 +1,99 @@
 package game
 
-type ePuyoGroup struct {
-	color int
-
-	pMap map[string]*Puyo
+type connMap struct {
+	color  Color
+	mainID PID
+	idMap  map[PID]bool
 }
 
-func (e *ePuyoGroup) IsMatchColor(color int) bool {
-	return e.color == color
+func (cm *connMap) IsMatchColor(color Color) bool {
+	return cm.color == color
 }
 
-func (e *ePuyoGroup) Has(p *Puyo) bool {
-	_, ok := e.pMap[p.ID()]
+func (cm *connMap) Has(id PID) bool {
+	_, ok := cm.idMap[id]
 	return ok
 }
 
-func (e *ePuyoGroup) Add(p *Puyo) {
-	e.pMap[p.ID()] = p
+func (cm *connMap) Add(id PID) {
+	cm.idMap[id] = true
 }
 
-func (e *ePuyoGroup) CanErase(cNum int) bool {
-	return len(e.pMap) >= cNum
+func (cm *connMap) CanErase(cNum int) bool {
+	return len(cm.idMap) >= cNum
 }
 
-func Ereaser(puyos []*Puyo, cNum int) []*Puyo {
-	results := []*Puyo{}
+func Ereaser(board Board, playerPP *PuyoPair, cNum int) (Board, bool) {
+	if cNum <= 1 {
+		return newBoard(), true
+	}
+	xLen := len(board[0])
+	yLen := len(board)
 
-	if cNum <= 1 || len(puyos) == 0 {
-		return results
+	cMS := []*connMap{}
+
+	isMoving := func(x, y int) bool {
+		if y == yLen-1 {
+			return false
+		}
+		return board[y+1][x] == 0
 	}
 
-	eGroupList := []*ePuyoGroup{}
-	for _, p := range puyos {
-		eGroup := &ePuyoGroup{color: p.Color, pMap: map[string]*Puyo{
-			p.ID(): p,
-		}}
-		eGroupList = append(eGroupList, eGroup)
-		for np := range nextPuyo(puyos, p) {
-			for _, eg := range eGroupList {
-				if eg.IsMatchColor(np.Color) && eg.Has(p) {
-					eg.Add(np)
+	for y, rows := range board {
+		for x, c := range rows {
+			if c == 0 || playerPP.Has(x, y) || isMoving(x, y) {
+				continue
+			}
+
+			mPID := ToID(x, y, c)
+			cm := &connMap{color: c, idMap: map[PID]bool{
+				mPID: true,
+			}, mainID: mPID}
+			cMS = append(cMS, cm)
+
+			addCM := func(nx, ny int) {
+				if !((0 <= nx && nx < xLen) && (0 <= ny && ny < yLen)) {
+					return
+				}
+				if playerPP.Has(nx, ny) || isMoving(nx, ny) {
+					return
+				}
+				sc := board[ny][nx]
+				for _, cm := range cMS {
+					if cm.Has(mPID) && cm.IsMatchColor(sc) {
+						cm.Add(ToID(nx, ny, sc))
+					}
 				}
 			}
+			addCM(x, y-1)
+			addCM(x, y+1)
+			addCM(x-1, y)
+			addCM(x+1, y)
 		}
 	}
 
-	deleteIDs := map[string]bool{}
-	for _, eg := range eGroupList {
-		if !eg.CanErase(cNum) {
+	deletableIDM := map[PID]bool{}
+	for _, cm := range cMS {
+		if !cm.CanErase(cNum) {
 			continue
 		}
-		for _, p := range eg.pMap {
-			deleteIDs[p.ID()] = true
+		for id := range cm.idMap {
+			deletableIDM[id] = true
 		}
 	}
 
-	for _, p := range puyos {
-		_, ok := deleteIDs[p.ID()]
-		if !ok {
-			results = append(results, p)
-		}
-	}
-
-	return results
-}
-
-func nextPuyo(puyos []*Puyo, puyo *Puyo) chan *Puyo {
-	ch := make(chan *Puyo)
-
-	go func() {
-		defer close(ch)
-
-		for _, p := range puyos {
-			if p.X == puyo.X {
-				if p.Y == puyo.Y+1 {
-					ch <- p
-				} else if p.Y == puyo.Y-1 {
-					ch <- p
-				}
-			} else if p.Y == puyo.Y {
-				if p.X == puyo.X+1 {
-					ch <- p
-				} else if p.X == puyo.X-1 {
-					ch <- p
-				}
+	isErased := false
+	for y, rows := range board {
+		for x, c := range rows {
+			pid := ToID(x, y, c)
+			_, ok := deletableIDM[pid]
+			if !ok {
+				continue
 			}
+			board[y][x] = 0
+			isErased = true
 		}
-	}()
+	}
 
-	return ch
+	return board, isErased
 }

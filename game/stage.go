@@ -2,8 +2,11 @@ package game
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/somen440/golang-puyo/resources/images"
@@ -21,18 +24,33 @@ func init() {
 	stageImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 }
 
-var (
-	board [stageY][stageX]int
-)
+type PID string
 
-func InitializeBoard() {
-	for i := 0; i < stageY; i++ {
-		for j := 0; j < stageX; j++ {
-			board[i][j] = 0
-		}
-	}
+type Color int
+
+type Board [stageY][stageX]Color
+
+type ColorFunc func(b *Board, x, y int, c Color)
+
+func ToID(x, y int, c Color) PID {
+	return PID(fmt.Sprintf("%d_%d_%d", x, y, c))
 }
 
-func init() {
-	InitializeBoard()
+func FromID(id PID) (x, y int, c Color) {
+	tmp := strings.Split(string(id), "_")
+	x, _ = strconv.Atoi(tmp[0])
+	y, _ = strconv.Atoi(tmp[1])
+	tmpC, _ := strconv.Atoi(tmp[2])
+	c = Color(tmpC)
+	return
+}
+
+func newBoard() Board {
+	b := [stageY][stageX]Color{}
+	for i := 0; i < stageY; i++ {
+		for j := 0; j < stageX; j++ {
+			b[i][j] = 0
+		}
+	}
+	return b
 }

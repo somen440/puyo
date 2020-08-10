@@ -8,30 +8,188 @@ import (
 
 func TestDropper(t *testing.T) {
 	tests := []struct {
-		title    string
-		puyos    []*Puyo
-		expected []*Puyo
-		bottom   int
+		title             string
+		board             Board
+		playerPP          *PuyoPair
+		expectedBoard     Board
+		expectedPlayerPP  *PuyoPair
+		expectedIsFellOut bool
 	}{
 		{
-			"ないので何も起きない",
-			[]*Puyo{},
-			[]*Puyo{},
-			4,
+			"全部底にある",
+			Board{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{2, 1, 2, 1, 2, 1},
+				{1, 2, 1, 2, 1, 2},
+			},
+			&PuyoPair{
+				First: &Puyo{
+					X:     2,
+					Y:     11,
+					Color: 1,
+				},
+				Second: &Puyo{
+					X:     2,
+					Y:     10,
+					Color: 2,
+				},
+			},
+			Board{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{2, 1, 2, 1, 2, 1},
+				{1, 2, 1, 2, 1, 2},
+			},
+			&PuyoPair{
+				First: &Puyo{
+					X:     2,
+					Y:     11,
+					Color: 1,
+				},
+				Second: &Puyo{
+					X:     2,
+					Y:     10,
+					Color: 2,
+				},
+			},
+			false,
 		},
 		{
-			"全部底にある",
-			[]*Puyo{
-				{0, 3, 1}, {1, 3, 1}, {2, 3, 1}, {2, 3, 1},
+			"落ちる",
+			Board{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 2, 0, 0, 0, 0},
+				{0, 1, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 1, 0, 0},
+				{2, 0, 2, 0, 2, 1},
+				{1, 2, 1, 0, 1, 2},
 			},
-			[]*Puyo{},
-			4,
+			&PuyoPair{
+				First: &Puyo{
+					X:     1,
+					Y:     6,
+					Color: 2,
+				},
+				Second: &Puyo{
+					X:     1,
+					Y:     7,
+					Color: 1,
+				},
+			},
+			Board{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 2, 0, 0, 0, 0},
+				{0, 1, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{2, 0, 2, 1, 2, 1},
+				{1, 2, 1, 0, 1, 2},
+			},
+			&PuyoPair{
+				First: &Puyo{
+					X:     1,
+					Y:     7,
+					Color: 2,
+				},
+				Second: &Puyo{
+					X:     1,
+					Y:     8,
+					Color: 1,
+				},
+			},
+			false,
+		},
+		{
+			"落ちた（PlayerPP も落ち切った）",
+			Board{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 2, 0, 0, 0, 0},
+				{0, 1, 0, 1, 0, 0},
+				{2, 0, 2, 0, 2, 1},
+				{1, 2, 1, 0, 1, 2},
+			},
+			&PuyoPair{
+				First: &Puyo{
+					X:     1,
+					Y:     8,
+					Color: 2,
+				},
+				Second: &Puyo{
+					X:     1,
+					Y:     9,
+					Color: 1,
+				},
+			},
+			Board{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 2, 0, 0, 0, 0},
+				{2, 1, 2, 1, 2, 1},
+				{1, 2, 1, 0, 1, 2},
+			},
+			&PuyoPair{
+				First: &Puyo{
+					X:     1,
+					Y:     9,
+					Color: 2,
+				},
+				Second: &Puyo{
+					X:     1,
+					Y:     10,
+					Color: 1,
+				},
+			},
+			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
-			actual := Dropper(tt.puyos, tt.bottom)
-			assert.Equal(t, tt.expected, actual)
+			actualBoard, actualPlayerPP, actualIsFellOut := Dropper(tt.board, tt.playerPP)
+			assert.Equal(t, tt.expectedBoard, actualBoard)
+			assert.Equal(t, tt.expectedPlayerPP, actualPlayerPP)
+			assert.Equal(t, tt.expectedIsFellOut, actualIsFellOut)
 		})
 	}
 }

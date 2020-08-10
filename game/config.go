@@ -44,3 +44,12 @@ func init() {
 		Hinting: font.HintingFull,
 	})
 }
+
+type Move int
+
+const (
+	Up Move = iota
+	Down
+	Left
+	Right
+)
